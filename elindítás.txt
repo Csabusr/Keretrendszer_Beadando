@@ -1,0 +1,8 @@
+docker-compose rm
+docker-compose up db
+Entrypoint kopipaszta
+Ready for connection.
+docker-compose up backend
+Intellij baszogás után
+docker-compose rm backend
+docker-compose up backend 

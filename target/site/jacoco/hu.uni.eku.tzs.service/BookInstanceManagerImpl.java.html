@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="hu"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookInstanceManagerImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">backend</a> &gt; <a href="index.source.html" class="el_package">hu.uni.eku.tzs.service</a> &gt; <span class="el_source">BookInstanceManagerImpl.java</span></div><h1>BookInstanceManagerImpl.java</h1><pre class="source lang-java linenums">package hu.uni.eku.tzs.service;
+
+import hu.uni.eku.tzs.dao.BookInstanceRepository;
+import hu.uni.eku.tzs.dao.BookRepository;
+import hu.uni.eku.tzs.dao.entity.AuthorEntity;
+import hu.uni.eku.tzs.dao.entity.BookEntity;
+import hu.uni.eku.tzs.dao.entity.BookInstanceEntity;
+import hu.uni.eku.tzs.model.Author;
+import hu.uni.eku.tzs.model.Book;
+import hu.uni.eku.tzs.model.BookInstance;
+import hu.uni.eku.tzs.model.BookState;
+import hu.uni.eku.tzs.service.exceptions.BookNotFoundException;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class BookInstanceManagerImpl implements BookInstanceManager {
+
+    private final BookInstanceRepository bookInstanceRepository;
+
+    private final BookRepository bookRepository;
+
+    @Override
+    public Collection&lt;BookInstance&gt; readAll() {
+<span class="fc" id="L30">        return bookInstanceRepository.findAll()</span>
+<span class="fc" id="L31">            .stream()</span>
+<span class="fc" id="L32">            .map(BookInstanceManagerImpl::convertBookInstanceEntity2Model)</span>
+<span class="fc" id="L33">            .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public Collection&lt;BookInstance&gt; readInstancesOfBook(Book book) {
+<span class="fc" id="L38">        return bookInstanceRepository.findAllByBook(book.getIsbn())</span>
+<span class="fc" id="L39">            .stream()</span>
+<span class="fc" id="L40">            .map(BookInstanceManagerImpl::convertBookInstanceEntity2Model)</span>
+<span class="fc" id="L41">            .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public BookInstance record(Book book) throws BookNotFoundException {
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if (bookRepository.findById(book.getIsbn()).isEmpty()) {</span>
+<span class="fc" id="L47">            throw new BookNotFoundException();</span>
+        }
+<span class="fc" id="L49">        BookInstance instance = new BookInstance(UUID.randomUUID().toString(), book, BookState.BORROWABLE);</span>
+<span class="fc" id="L50">        return convertBookInstanceEntity2Model(</span>
+<span class="fc" id="L51">            bookInstanceRepository.save(convertBookInstance2BookInstanceEntity(instance)));</span>
+    }
+
+    @Override
+    public BookInstance modify(BookInstance bookInstance) {
+<span class="nc" id="L56">        return convertBookInstanceEntity2Model(</span>
+<span class="nc" id="L57">            bookInstanceRepository.save(convertBookInstance2BookInstanceEntity(bookInstance))</span>
+        );
+    }
+
+    @Override
+    public void delete(String inventoryNo) {
+<span class="nc" id="L63">        Optional&lt;BookInstanceEntity&gt; bookInstanceEntity = bookInstanceRepository.findById(inventoryNo);</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (bookInstanceEntity.isEmpty()) {</span>
+<span class="nc" id="L65">            return;</span>
+        }
+<span class="nc" id="L67">        bookInstanceEntity.get().setState(BookState.DISCARDED.toString());</span>
+<span class="nc" id="L68">        bookInstanceRepository.save(bookInstanceEntity.get());</span>
+<span class="nc" id="L69">    }</span>
+
+    @Override
+    public void delete(BookInstance bookInstance) {
+<span class="nc" id="L73">        bookInstance.setState(BookState.DISCARDED);</span>
+<span class="nc" id="L74">        bookInstanceRepository.save(convertBookInstance2BookInstanceEntity(bookInstance));</span>
+<span class="nc" id="L75">    }</span>
+
+    private static BookInstance convertBookInstanceEntity2Model(BookInstanceEntity entity) {
+<span class="fc" id="L78">        BookEntity bookEntity = entity.getBook();</span>
+<span class="fc" id="L79">        return new BookInstance(</span>
+<span class="fc" id="L80">            entity.getInventoryNo(),</span>
+<span class="fc" id="L81">            new Book(bookEntity.getIsbn(),</span>
+                new Author(
+<span class="fc" id="L83">                    bookEntity.getAuthor().getId(),</span>
+<span class="fc" id="L84">                    bookEntity.getAuthor().getFirstName(),</span>
+<span class="fc" id="L85">                    bookEntity.getAuthor().getLastName(),</span>
+<span class="fc" id="L86">                    bookEntity.getAuthor().getNationality()</span>
+                ),
+<span class="fc" id="L88">                bookEntity.getTitle(),</span>
+<span class="fc" id="L89">                bookEntity.getLanguage()</span>
+            ),
+<span class="fc" id="L91">            BookState.valueOf(entity.getState())</span>
+        );
+    }
+
+    private static BookInstanceEntity convertBookInstance2BookInstanceEntity(BookInstance instance) {
+<span class="fc" id="L96">        return BookInstanceEntity.builder()</span>
+<span class="fc" id="L97">            .inventoryNo(instance.getInventoryNo())</span>
+<span class="fc" id="L98">            .book(convertBook2BookEntity(instance.getBook()))</span>
+<span class="fc" id="L99">            .state(instance.getState().toString())</span>
+<span class="fc" id="L100">            .build();</span>
+    }
+
+    private static BookEntity convertBook2BookEntity(Book book) {
+<span class="fc" id="L104">        return BookEntity.builder()</span>
+<span class="fc" id="L105">            .isbn(book.getIsbn())</span>
+<span class="fc" id="L106">            .title(book.getTitle())</span>
+<span class="fc" id="L107">            .title(book.getLanguage())</span>
+<span class="fc" id="L108">            .author(</span>
+<span class="fc" id="L109">                AuthorEntity.builder()</span>
+<span class="fc" id="L110">                    .id(book.getAuthor().getId())</span>
+<span class="fc" id="L111">                    .firstName(book.getAuthor().getFirstName())</span>
+<span class="fc" id="L112">                    .lastName(book.getAuthor().getLastName())</span>
+<span class="fc" id="L113">                    .nationality(book.getAuthor().getNationality())</span>
+<span class="fc" id="L114">                    .build()</span>
+            )
+<span class="fc" id="L116">            .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

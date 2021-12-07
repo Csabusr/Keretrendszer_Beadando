@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="hu"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DirectorGenereManagerImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">backend</a> &gt; <a href="index.source.html" class="el_package">hu.uni.eku.tzs.service</a> &gt; <span class="el_source">DirectorGenereManagerImpl.java</span></div><h1>DirectorGenereManagerImpl.java</h1><pre class="source lang-java linenums">package hu.uni.eku.tzs.service;
+
+import hu.uni.eku.tzs.dao.DirectorGenereRepository;
+import hu.uni.eku.tzs.dao.entity.DirectorEntity;
+import hu.uni.eku.tzs.dao.entity.DirectorGenereEntity;
+import hu.uni.eku.tzs.model.Director;
+import hu.uni.eku.tzs.model.DirectorGenere;
+import hu.uni.eku.tzs.service.exceptions.DirectorGenereAlreadyExistsException;
+import hu.uni.eku.tzs.service.exceptions.DirectorGenereNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+
+import java.util.Collection;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class DirectorGenereManagerImpl implements DirectorGenereManager {
+
+    private final DirectorGenereRepository directorGenereRepository;
+
+    @Override
+    public Collection&lt;DirectorGenere&gt; readAll() {
+
+<span class="fc" id="L27">        return directorGenereRepository.findAll(PageRequest.of(0, 100)).stream()</span>
+<span class="fc" id="L28">                .map(DirectorGenereManagerImpl::convertDirectorGenereEntity2Model)</span>
+<span class="fc" id="L29">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public DirectorGenere readById(int id) throws DirectorGenereNotFoundException {
+<span class="fc" id="L34">        Optional&lt;DirectorGenereEntity&gt; entity = directorGenereRepository.findById(id);</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (entity.isEmpty()) {</span>
+<span class="fc" id="L36">            throw new DirectorGenereNotFoundException(String.format(&quot;Cannot find DirectorGenre with this id %s&quot;, id));</span>
+        }
+
+<span class="fc" id="L39">        return convertDirectorGenereEntity2Model(entity.get());</span>
+    }
+
+    @Override
+    public DirectorGenere modify(DirectorGenere directorGenere) {
+<span class="fc" id="L44">        DirectorGenereEntity entity = convertDirectorGenereModel2Entity(directorGenere);</span>
+<span class="fc" id="L45">        return convertDirectorGenereEntity2Model(directorGenereRepository.save(entity));</span>
+
+    }
+
+    @Override
+    public void delete(DirectorGenere directorGenere) throws DirectorGenereNotFoundException {
+<span class="nc" id="L51">        directorGenereRepository.delete(convertDirectorGenereModel2Entity(directorGenere));</span>
+<span class="nc" id="L52">    }</span>
+
+    @Override
+    public DirectorGenere record(DirectorGenere directorGenere) throws DirectorGenereAlreadyExistsException {
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (directorGenereRepository.findById(directorGenere.getDirector().getId()).isPresent()) {</span>
+<span class="fc" id="L57">            throw new DirectorGenereAlreadyExistsException();</span>
+        }
+<span class="fc" id="L59">        DirectorGenereEntity directorGenereEntity = directorGenereRepository.save(</span>
+<span class="fc" id="L60">                DirectorGenereEntity.builder()</span>
+<span class="fc" id="L61">                        .director(convertDirectorModel2Entity(directorGenere.getDirector()))</span>
+<span class="fc" id="L62">                        .genere(directorGenere.getGenre())</span>
+<span class="fc" id="L63">                        .prob(directorGenere.getProb())</span>
+<span class="fc" id="L64">                        .build()</span>
+        );
+<span class="fc" id="L66">        return convertDirectorGenereEntity2Model(directorGenereEntity);</span>
+    }
+
+    private static Director convertDirectorEntity2Model(DirectorEntity directorEntity) {
+<span class="fc" id="L70">        return new Director(</span>
+<span class="fc" id="L71">                directorEntity.getId(),</span>
+<span class="fc" id="L72">                directorEntity.getFirstname(),</span>
+<span class="fc" id="L73">                directorEntity.getLastname()</span>
+        );
+    }
+
+    private static DirectorEntity convertDirectorModel2Entity(Director director) {
+<span class="fc" id="L78">        return DirectorEntity.builder()</span>
+<span class="fc" id="L79">                .id(director.getId())</span>
+<span class="fc" id="L80">                .firstname(director.getFirstname())</span>
+<span class="fc" id="L81">                .lastname(director.getLastname())</span>
+<span class="fc" id="L82">                .build();</span>
+    }
+
+    private static DirectorGenere convertDirectorGenereEntity2Model(DirectorGenereEntity entity) {
+<span class="fc" id="L86">        return new DirectorGenere(</span>
+<span class="fc" id="L87">                convertDirectorEntity2Model(entity.getDirector()),</span>
+<span class="fc" id="L88">                entity.getGenere(),</span>
+<span class="fc" id="L89">                entity.getProb());</span>
+    }
+
+    private static DirectorGenereEntity convertDirectorGenereModel2Entity(DirectorGenere directorGenere) {
+<span class="fc" id="L93">        return DirectorGenereEntity.builder()</span>
+<span class="fc" id="L94">                .director(convertDirectorModel2Entity(directorGenere.getDirector()))</span>
+<span class="fc" id="L95">                .genere(directorGenere.getGenre())</span>
+<span class="fc" id="L96">                .prob(directorGenere.getProb())</span>
+<span class="fc" id="L97">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

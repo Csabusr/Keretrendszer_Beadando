@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="hu"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DirectorManagerImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">backend</a> &gt; <a href="index.source.html" class="el_package">hu.uni.eku.tzs.service</a> &gt; <span class="el_source">DirectorManagerImpl.java</span></div><h1>DirectorManagerImpl.java</h1><pre class="source lang-java linenums">package hu.uni.eku.tzs.service;
+
+import hu.uni.eku.tzs.dao.DirectorRepository;
+import hu.uni.eku.tzs.dao.entity.DirectorEntity;
+import hu.uni.eku.tzs.model.Director;
+import hu.uni.eku.tzs.service.exceptions.DirectorAlreadyExistsException;
+import hu.uni.eku.tzs.service.exceptions.DirectorNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+
+import java.util.Collection;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class DirectorManagerImpl implements DirectorManager {
+
+    private final DirectorRepository directorRepository;
+
+    @Override
+    public Collection&lt;Director&gt; readAll() {
+<span class="fc" id="L24">        return directorRepository.findAll(PageRequest.of(0, 100)).stream()</span>
+<span class="fc" id="L25">                .map(DirectorManagerImpl::convertDirectorEntity2Model)</span>
+<span class="fc" id="L26">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public Director readById(int id) throws DirectorNotFoundException {
+<span class="fc" id="L31">        Optional&lt;DirectorEntity&gt; entity = directorRepository.findById(id);</span>
+<span class="fc bfc" id="L32" title="All 2 branches covered.">        if (entity.isEmpty()) {</span>
+<span class="fc" id="L33">            throw new DirectorNotFoundException(String.format(&quot;Cannot find Director with this id %s&quot;, id));</span>
+        }
+
+<span class="fc" id="L36">        return convertDirectorEntity2Model(entity.get());</span>
+    }
+
+    @Override
+    public Director modify(Director director) {
+<span class="fc" id="L41">        DirectorEntity entity = convertDirectorModel2Entity(director);</span>
+<span class="fc" id="L42">        return convertDirectorEntity2Model(directorRepository.save(entity));</span>
+    }
+
+    @Override
+    public void delete(Director director) throws DirectorNotFoundException {
+<span class="nc" id="L47">        directorRepository.delete(convertDirectorModel2Entity(director));</span>
+<span class="nc" id="L48">    }</span>
+
+    @Override
+    public Director record(Director director) throws DirectorAlreadyExistsException {
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (directorRepository.findById(director.getId()).isPresent()) {</span>
+<span class="fc" id="L53">            throw new DirectorAlreadyExistsException();</span>
+        }
+<span class="fc" id="L55">        DirectorEntity directorEntity = directorRepository.save(</span>
+<span class="fc" id="L56">                DirectorEntity.builder()</span>
+<span class="fc" id="L57">                        .id(director.getId())</span>
+<span class="fc" id="L58">                        .firstname(director.getFirstname())</span>
+<span class="fc" id="L59">                        .lastname(director.getLastname())</span>
+<span class="fc" id="L60">                        .build()</span>
+        );
+<span class="fc" id="L62">        return convertDirectorEntity2Model(directorEntity);</span>
+    }
+
+    private static Director convertDirectorEntity2Model(DirectorEntity directorEntity) {
+<span class="fc" id="L66">        return new Director(</span>
+<span class="fc" id="L67">                directorEntity.getId(),</span>
+<span class="fc" id="L68">                directorEntity.getFirstname(),</span>
+<span class="fc" id="L69">                directorEntity.getLastname()</span>
+        );
+    }
+
+    private static DirectorEntity convertDirectorModel2Entity(Director director) {
+<span class="fc" id="L74">        return DirectorEntity.builder()</span>
+<span class="fc" id="L75">                .id(director.getId())</span>
+<span class="fc" id="L76">                .firstname(director.getFirstname())</span>
+<span class="fc" id="L77">                .lastname(director.getLastname())</span>
+<span class="fc" id="L78">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="hu"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DirectorController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">backend</a> &gt; <a href="index.source.html" class="el_package">hu.uni.eku.tzs.controller</a> &gt; <span class="el_source">DirectorController.java</span></div><h1>DirectorController.java</h1><pre class="source lang-java linenums">package hu.uni.eku.tzs.controller;
+
+import hu.uni.eku.tzs.controller.dto.DirectorDto;
+import hu.uni.eku.tzs.controller.dto.DirectorMapper;
+import hu.uni.eku.tzs.model.Director;
+import hu.uni.eku.tzs.service.DirectorManager;
+import hu.uni.eku.tzs.service.exceptions.DirectorAlreadyExistsException;
+import hu.uni.eku.tzs.service.exceptions.DirectorNotFoundException;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+import javax.validation.Valid;
+import java.util.Collection;
+import java.util.stream.Collectors;
+
+@Api(tags = &quot;Directors&quot;)
+@RequestMapping(&quot;/directors&quot;)
+@RestController
+@RequiredArgsConstructor
+public class DirectorController {
+
+    private final DirectorManager directorManager;
+
+    private final DirectorMapper directorMapper;
+
+    @ApiOperation(&quot;Read All&quot;)
+    @GetMapping(value = {&quot;/&quot;, &quot;&quot;})
+    public Collection&lt;DirectorDto&gt; readAllDirectors() {
+<span class="fc" id="L41">        return directorManager.readAll()</span>
+<span class="fc" id="L42">                .stream()</span>
+<span class="fc" id="L43">                .map(directorMapper::director2DirectorDto)</span>
+<span class="fc" id="L44">                .collect(Collectors.toList());</span>
+    }
+
+    @ApiOperation(&quot;Record&quot;)
+    @PostMapping(value = {&quot;&quot;, &quot;/&quot;})
+    public DirectorDto create(@Valid @RequestBody DirectorDto recordRequestDto) {
+<span class="fc" id="L50">        Director director = directorMapper.directorDto2Director(recordRequestDto);</span>
+        try {
+<span class="fc" id="L52">            Director recordedDirector = directorManager.record(director);</span>
+<span class="fc" id="L53">            return directorMapper.director2DirectorDto(recordedDirector);</span>
+<span class="fc" id="L54">        } catch (DirectorAlreadyExistsException e) {</span>
+<span class="fc" id="L55">            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());</span>
+        }
+    }
+
+    @ApiOperation(&quot;Update&quot;)
+    @PutMapping(value = {&quot;&quot;, &quot;/&quot;})
+    public DirectorDto update(@Valid @RequestBody DirectorDto updateRequestDto) {
+<span class="nc" id="L62">        Director director = directorMapper.directorDto2Director(updateRequestDto);</span>
+<span class="nc" id="L63">        Director updatedDirector = directorManager.modify(director);</span>
+<span class="nc" id="L64">        return directorMapper.director2DirectorDto(updatedDirector);</span>
+    }
+
+    @ApiOperation(&quot;Delete&quot;)
+    @DeleteMapping(value = {&quot;&quot;, &quot;/&quot;})
+    public void delete(@RequestParam int id) {
+        try {
+<span class="fc" id="L71">            directorManager.delete(directorManager.readById(id));</span>
+<span class="fc" id="L72">        } catch (DirectorNotFoundException e) {</span>
+<span class="fc" id="L73">            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());</span>
+<span class="fc" id="L74">        }</span>
+<span class="fc" id="L75">    }</span>
+
+    @ApiOperation(&quot;Delete&quot;)
+    @DeleteMapping(value = {&quot;/{id}&quot;})
+    public void deleteBasedOnPath(@PathVariable int id) {
+<span class="nc" id="L80">        this.delete(id);</span>
+<span class="nc" id="L81">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.6.202009150832</span></div></body></html>
